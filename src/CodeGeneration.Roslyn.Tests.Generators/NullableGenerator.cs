@@ -76,29 +76,14 @@ namespace CodeGeneration.Roslyn.Tests.Generators
                                 ReturnStatement(
                                     IdentifierName("value")))));
 
-                if (isNullableEnabled)
-                {
-                    methodDoSomething = methodDoSomething.WithLeadingTrivia(TriviaList(Trivia(
-                            NullableDirectiveTrivia(
-                                Token(SyntaxKind.EnableKeyword),
-                                true))))
-                        .WithTrailingTrivia(TriviaList(Trivia(
-                            NullableDirectiveTrivia(
-                                Token(SyntaxKind.RestoreKeyword),
-                                true))));
-                    methodDoSomethingStrict = methodDoSomethingStrict.WithLeadingTrivia(TriviaList(Trivia(
-                            NullableDirectiveTrivia(
-                                Token(SyntaxKind.EnableKeyword),
-                                true))))
-                        .WithTrailingTrivia(TriviaList(Trivia(
-                            NullableDirectiveTrivia(
-                                Token(SyntaxKind.RestoreKeyword),
-                                true))));
-                }
+                var leading = isNullableEnabled ? TriviaList(Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true))) : SyntaxTriviaList.Empty;
+                var trailing = isNullableEnabled ? TriviaList(Trivia(NullableDirectiveTrivia(Token(SyntaxKind.RestoreKeyword), true))) : SyntaxTriviaList.Empty;
 
                 copy = ClassDeclaration(applyToClass.Identifier)
                     .WithModifiers(applyToClass.Modifiers)
-                    .AddMembers(methodDoSomething, methodDoSomethingStrict);
+                    .WithLeadingTrivia(leading)
+                    .AddMembers(methodDoSomething, methodDoSomethingStrict)
+                    .WithTrailingTrivia(trailing);
             }
 
             if (copy != null)
