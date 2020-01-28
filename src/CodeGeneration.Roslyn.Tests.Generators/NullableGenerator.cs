@@ -19,6 +19,11 @@ namespace CodeGeneration.Roslyn.Tests.Generators
             Requires.NotNull(attributeData, nameof(attributeData));
         }
 
+        public static TypeSyntax MakeNullableIfEnabled(TypeSyntax typeSyntax, bool isEnabled)
+        {
+            return isEnabled ? NullableType(typeSyntax) : typeSyntax;
+        }
+
         public Task<SyntaxList<MemberDeclarationSyntax>> GenerateAsync(TransformationContext context, IProgress<Diagnostic> progress, CancellationToken cancellationToken)
         {
             var results = List<MemberDeclarationSyntax>();
@@ -27,7 +32,7 @@ namespace CodeGeneration.Roslyn.Tests.Generators
             {
                 var nullableContext = context.SemanticModel.GetNullableContext(applyToClass.SpanStart);
                 var isNullableEnabled = nullableContext == NullableContext.Enabled;
-                var method = MethodDeclaration(
+                var methodDoSomething = MethodDeclaration(
                         MakeNullableIfEnabled(
                             PredefinedType(
                                 Token(SyntaxKind.StringKeyword)), isNullableEnabled),
@@ -49,9 +54,39 @@ namespace CodeGeneration.Roslyn.Tests.Generators
                             SingletonList<StatementSyntax>(
                                 ReturnStatement(
                                     IdentifierName("value")))));
+                var methodDoSomethingStrict = MethodDeclaration(
+                        MakeNullableIfEnabled(
+                            PredefinedType(
+                                Token(SyntaxKind.StringKeyword)), isNullableEnabled),
+                        Identifier("DoSomethingStrict"))
+                    .WithModifiers(
+                        TokenList(
+                            Token(SyntaxKind.PublicKeyword)))
+                    .WithParameterList(
+                        ParameterList(
+                            SingletonSeparatedList(
+                                Parameter(
+                                        Identifier("value"))
+                                    .WithType(
+                                        PredefinedType(
+                                                Token(SyntaxKind.StringKeyword))))))
+                    .WithBody(
+                        Block(
+                            SingletonList<StatementSyntax>(
+                                ReturnStatement(
+                                    IdentifierName("value")))));
+
                 if (isNullableEnabled)
                 {
-                    method = method.WithLeadingTrivia(TriviaList(Trivia(
+                    methodDoSomething = methodDoSomething.WithLeadingTrivia(TriviaList(Trivia(
+                            NullableDirectiveTrivia(
+                                Token(SyntaxKind.EnableKeyword),
+                                true))))
+                        .WithTrailingTrivia(TriviaList(Trivia(
+                            NullableDirectiveTrivia(
+                                Token(SyntaxKind.RestoreKeyword),
+                                true))));
+                    methodDoSomethingStrict = methodDoSomethingStrict.WithLeadingTrivia(TriviaList(Trivia(
                             NullableDirectiveTrivia(
                                 Token(SyntaxKind.EnableKeyword),
                                 true))))
@@ -63,7 +98,7 @@ namespace CodeGeneration.Roslyn.Tests.Generators
 
                 copy = ClassDeclaration(applyToClass.Identifier)
                     .WithModifiers(applyToClass.Modifiers)
-                    .AddMembers(method);
+                    .AddMembers(methodDoSomething, methodDoSomethingStrict);
             }
 
             if (copy != null)
@@ -72,11 +107,6 @@ namespace CodeGeneration.Roslyn.Tests.Generators
             }
 
             return Task.FromResult(results);
-        }
-
-        public static TypeSyntax MakeNullableIfEnabled(TypeSyntax typeSyntax, bool isEnabled)
-        {
-            return isEnabled ? NullableType(typeSyntax) : typeSyntax;
         }
     }
 }

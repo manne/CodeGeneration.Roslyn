@@ -7,7 +7,6 @@
     <GenerateCodeFromAttributesToolPathOverride>$(OutputPath)..\..\CodeGeneration.Roslyn.Tool\$(Configuration)\netcoreapp2.1\dotnet-codegen.dll</GenerateCodeFromAttributesToolPathOverride>
     <!-- Ignore CGR1002 because it's expected to be raised by legacy Amadevus.RecordGenerator -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);CGR1002</MSBuildWarningsAsMessages>
-    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
